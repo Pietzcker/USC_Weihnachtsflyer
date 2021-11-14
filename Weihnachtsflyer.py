@@ -12,6 +12,7 @@ re_str = re.compile(r"[ -]?str(?:\.|a[ßs]+e\b)", re.IGNORECASE)
 re_weg = re.compile(r"[ -]?weg\b", re.IGNORECASE)
 
 heute = datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+methusalem = "01.01.1900"  # Dummy-Geburtsdatum für Einträge, die keines haben
 
 print("Bitte Reporter-Abfrage 'Gesamtliste Weihnachtsflyer'")
 print("durchführen und Daten in Zwischenablage ablegen.")
@@ -46,7 +47,7 @@ for eintrag in daten:
     if geb := eintrag["Geburtsdatum"]:
         eintrag["Geburtsdatum"] = datetime.datetime.strptime(geb, "%d.%m.%Y")
     else:
-        eintrag["Geburtsdatum"] = datetime.datetime.strptime("01.01.1900", "%d.%m.%Y")
+        eintrag["Geburtsdatum"] = datetime.datetime.strptime(methusalem, "%d.%m.%Y")
 
 daten.sort(key = lambda l: l["Geburtsdatum"], reverse=True)
 
@@ -84,7 +85,7 @@ adressen = {k: v for k, v in adressen.items() if len(v) > 1}
 
 print(f"Darüber hinaus gibt es {len(adressen)} Adressen, an denen Personen mit unterschiedlichen Nachnamen wohnen.")
 
-fieldnames.extend(["Familie", "gleiche Adresse", "str_norm"])
+fieldnames.extend(["Familie", "gleiche Adresse", "str_norm", "Adressat"])
 
 with open(f"Weihnachtsflyer {heute}.csv", "w", encoding="cp1252", newline="") as outfile:
     writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter=";")
@@ -93,4 +94,24 @@ with open(f"Weihnachtsflyer {heute}.csv", "w", encoding="cp1252", newline="") as
         daten = eintrag["Daten"]
         daten["Familie"] = ", ".join(eintrag["Familie"])
         daten["gleiche Adresse"] = ", ".join(adressen.get((daten["str_norm"], daten["PLZ"]), []))
+        alter = datetime.datetime.today() - daten["Geburtsdatum"]
+        if alter.days < 18*365.25:
+            daten["Adressat"] = f'Familie {daten["Name"]}'
+        elif daten["Geburtsdatum"] == datetime.datetime.strptime(methusalem, "%d.%m.%Y"):
+            daten["Adressat"] = f'{daten["Adressanrede"]}'
+            if titel:=daten["Titel"]: 
+                daten["Adressat"] += f' {titel}'
+            if vorname:=daten["Vorname"]: 
+                daten["Adressat"] += f' {vorname}'
+            daten["Adressat"] += f' {daten["Name"]}'
+        elif daten["Mitglied"] in ("Mitglied", "Schnupperer"):
+            daten["Adressat"] = f'{daten["Adressanrede"]}'
+            if titel:=daten["Titel"]: 
+                daten["Adressat"] += f' {titel}'
+            if vorname:=daten["Vorname"]: 
+                daten["Adressat"] += f' {vorname}'
+            daten["Adressat"] += f' {daten["Name"]} & Familie'
+        else:
+            print(f'Adressat für {daten["Name"]} ({daten["Nummer"]})???')
+            
         writer.writerow(daten)
