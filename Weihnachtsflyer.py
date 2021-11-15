@@ -98,34 +98,17 @@ with open(f"Weihnachtsflyer {heute}.csv", "w", encoding="cp1252", newline="") as
         # Wohnt an dieser Adresse mehr als ein Mitglied/VIP... mit dem gleichen Nachnamen?
         # Oder ist der Adressat unter 18? Dann "Familie X" als Anschrift
         if daten["Familie"] or alter.days < 18*365.25:
-            daten["Adressat"] = f'Familie {daten["Name"]}'
-        # Ist das Geburtsdatum des Adressaten unbekannt (bei aktuellen Chormitgliedern nicht der Fall),
-        # aber z. B. bei Sponsoren/VIPs, dann Adressat = "Herrn/Frau Titel Vorname Name"
-        elif daten["Geburtsdatum"] == datetime.datetime.strptime(methusalem, "%d.%m.%Y"):
-            daten["Adressat"] = f'{daten["Adressanrede"]}'
-            if titel:=daten["Titel"]: 
-                daten["Adressat"] += f' {titel}'
-            if vorname:=daten["Vorname"]: 
-                daten["Adressat"] += f' {vorname}'
-            daten["Adressat"] += f' {daten["Name"]}'
-        # Falls ein Geburtsdatum vorliegt, aber > 18 und ohne Geschwister im Chor,
-        # zur Sicherheit Adressat = "Herrn/Frau Titel Vorname Name & Familie"
-        elif daten["Mitglied"] in ("Mitglied", "Schnupperer"):
-            daten["Adressat"] = f'{daten["Adressanrede"]}'
-            if titel:=daten["Titel"]: 
-                daten["Adressat"] += f' {titel}'
-            if vorname:=daten["Vorname"]: 
-                daten["Adressat"] += f' {vorname}'
-            daten["Adressat"] += f' {daten["Name"]} & Familie'
-        # Wenn auch diese Regel nicht greift, weiß ich auch nicht weiter. Hinweis ausdrucken und
-        # "Herrn/Frau Titel Vorname Nachname" verwenden.
+            daten["Adressat"] = f'\nFamilie {daten["Name"]}'
+        # Sonst die normale Anrede (Herrn/Frau Titel Vorname Nachname)
         else:
-            print(f'Adressat für {daten["Name"]} ({daten["Nummer"]})???')
-            daten["Adressat"] = f'{daten["Adressanrede"]}'
+            if (anr:=daten["Adressanrede"]) == "Familie":
+                daten["Adressat"] = f'\nFamilie '
+            else:
+                daten["Adressat"] = f'{anr}\n'
             if titel:=daten["Titel"]: 
-                daten["Adressat"] += f' {titel}'
+                daten["Adressat"] += f'{titel} '
             if vorname:=daten["Vorname"]: 
-                daten["Adressat"] += f' {vorname}'
-            daten["Adressat"] += f' {daten["Name"]}'
+                daten["Adressat"] += f'{vorname} '
+            daten["Adressat"] += f'{daten["Name"]}'
             
         writer.writerow(daten)
