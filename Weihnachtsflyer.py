@@ -1,4 +1,4 @@
-# Input: Reporter-Abfrage "Gesamtliste Stimmbildung (Vorlage für Übersichtsplan)"
+# Input: Reporter-Abfrage "Gesamtliste Weihnachtsflyer"
 #        in Zwischenablage, dann dieses Skript starten
 
 import csv
