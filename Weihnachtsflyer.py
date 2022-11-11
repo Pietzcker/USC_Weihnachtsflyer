@@ -87,28 +87,33 @@ print(f"Darüber hinaus gibt es {len(adressen)} Adressen, an denen Personen mit 
 
 fieldnames.extend(["Familie", "gleiche Adresse", "str_norm", "Adressat"])
 
+output = []
+
+for eintrag in personen.values():
+    daten = eintrag["Daten"]
+    daten["Familie"] = ", ".join(eintrag["Familie"])
+    daten["gleiche Adresse"] = ", ".join(adressen.get((daten["str_norm"], daten["PLZ"]), []))
+    alter = datetime.datetime.today() - daten["Geburtsdatum"]
+    # Wohnt an dieser Adresse mehr als ein Mitglied/VIP... mit dem gleichen Nachnamen?
+    # Oder ist der Adressat unter 18? Dann "Familie X" als Anschrift
+    if daten["Familie"] or alter.days < 18*365.25:
+        daten["Adressat"] = f'\nFamilie {daten["Name"]}'
+    # Sonst die normale Anrede (Herrn/Frau Titel Vorname Nachname)
+    else:
+        if (anr:=daten["Adressanrede"]) == "Familie":
+            daten["Adressat"] = f'\nFamilie '
+        else:
+            daten["Adressat"] = f'{anr}\n'
+        if titel:=daten["Titel"]: 
+            daten["Adressat"] += f'{titel} '
+        if vorname:=daten["Vorname"]: 
+            daten["Adressat"] += f'{vorname} '
+        daten["Adressat"] += f'{daten["Name"]}'
+    output.append(daten)
+
+output.sort(key=lambda l:(l["Land"], l["PLZ"], l["Straße/Postfach"], l["Name"]))
+            
 with open(f"Weihnachtsflyer {heute}.csv", "w", encoding="cp1252", newline="") as outfile:
     writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter=";")
     writer.writeheader()
-    for eintrag in personen.values():
-        daten = eintrag["Daten"]
-        daten["Familie"] = ", ".join(eintrag["Familie"])
-        daten["gleiche Adresse"] = ", ".join(adressen.get((daten["str_norm"], daten["PLZ"]), []))
-        alter = datetime.datetime.today() - daten["Geburtsdatum"]
-        # Wohnt an dieser Adresse mehr als ein Mitglied/VIP... mit dem gleichen Nachnamen?
-        # Oder ist der Adressat unter 18? Dann "Familie X" als Anschrift
-        if daten["Familie"] or alter.days < 18*365.25:
-            daten["Adressat"] = f'\nFamilie {daten["Name"]}'
-        # Sonst die normale Anrede (Herrn/Frau Titel Vorname Nachname)
-        else:
-            if (anr:=daten["Adressanrede"]) == "Familie":
-                daten["Adressat"] = f'\nFamilie '
-            else:
-                daten["Adressat"] = f'{anr}\n'
-            if titel:=daten["Titel"]: 
-                daten["Adressat"] += f'{titel} '
-            if vorname:=daten["Vorname"]: 
-                daten["Adressat"] += f'{vorname} '
-            daten["Adressat"] += f'{daten["Name"]}'
-            
-        writer.writerow(daten)
+    writer.writerows(output)
